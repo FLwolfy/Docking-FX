@@ -1,0 +1,84 @@
+/* ==========================
+   Docker (Dark)
+   ========================== */
+.docker {
+  -fx-background-color: #2c2c2c;
+  -fx-border-color: #444444;
+  -fx-border-width: 1;
+  -fx-border-radius: 6;
+  -fx-padding: 10;
+}
+
+/* ==========================
+   Dock-able Window
+   ========================== */
+.dock-window {
+  -fx-background-color: #292929;
+  -fx-border-color: #555555;
+  -fx-border-width: 1;
+  -fx-border-radius: 6;
+}
+
+.dock-tab-pane .tab-header-area .tab-header-background {
+  -fx-background-color: #3a3a3a;
+}
+
+.dock-tab {
+  -fx-background-color: #333333;
+  -fx-border-color: #666666;
+  -fx-border-radius: 6;
+}
+
+.dock-tab .tab-label {
+  -fx-text-fill: #ffffff;
+  -fx-font: 14px "Arial";
+}
+
+.dock-tab:hover {
+  -fx-background-color: rgba(122, 92, 255, 0.3); /* Purple accent */
+}
+
+.tab-header-area {
+  -fx-background-color: #252525;
+}
+
+.tab-content-area {
+  -fx-background-color: #2c2c2c;
+}
+
+/* ==========================
+   Dock Indicator
+   ========================== */
+.dock-indicator {
+  -fx-background-color: rgba(55, 33, 145, 0.73); /* Purple accent */
+  -fx-border-color: #1e1e1e;
+  -fx-border-width: 2;
+}
+
+.dock-indicator .label {
+  -fx-font-size: 40px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #ffffff;
+}
+
+.dock-indicator:hover {
+  -fx-background-color: rgba(255, 255, 0, 0.5);
+  -fx-text-fill: #222222;
+}
+
+/* ==========================
+   Dock SplitPane
+   ========================== */
+.dock-split-pane {
+  -fx-background-color: #2c2c2c;
+}
+
+.dock-split-pane .split-pane-divider {
+  -fx-background-color: #555555;
+  -fx-border-color: #777777;
+  -fx-border-width: 0.5;
+}
+
+.dock-split-pane .split-pane-divider:hover {
+  -fx-background-color: rgba(122, 92, 255, 0.3); /* Purple accent */
+}
