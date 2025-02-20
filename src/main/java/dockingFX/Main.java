@@ -37,12 +37,13 @@ public class Main extends Application {
       System.out.println("Window 5 closed");
     });
 
-    // Automatically format the windows
-    docker.reformat();
+    // Configure the docker
+    docker.reformat(); // <-- Automatically reformat the windows
+    // docker.setWindowOpaqueOnDragging(true); // <-- Uncomment this line to enable transparency
 
     // Set the docker UI style
     docker.addStyleSheet(DOCKER_STYLE_LIGHT_CSS);
-    // docker.addStyleSheet(DOCKER_STYLE_DARK_CSS); <-- Uncomment this line to use the light theme
+    // docker.addStyleSheet(DOCKER_STYLE_DARK_CSS); // <-- Uncomment this line to use the dark theme
 
     // Show the stage
     primaryStage.setTitle("DockingFX");

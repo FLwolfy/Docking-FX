@@ -3,6 +3,8 @@ package dockingFX.core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+
+import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
@@ -32,6 +34,9 @@ public class Docker {
   // Docker attributes
   final DIndicator dockIndicator;
   final Stage mainStage;
+
+  // Docker settings
+  boolean isWindowOpaqueOnDragging = false;
 
   /**
    * The position of the docking.
@@ -68,6 +73,7 @@ public class Docker {
       for (DWindow floatingWindow : floatingWindows) {
         if (floatingWindow.floatingStage.getOpacity() != 0) {
           floatingWindow.floatingStage.show();
+          Platform.runLater(floatingWindow.floatingStage::toFront);
         }
       }
     });
@@ -211,6 +217,12 @@ public class Docker {
     // Get the main SplitPane
     SplitPane mainSplitPane = (SplitPane) mainStage.getScene().getRoot();
     recursiveReformat.accept(mainSplitPane);
+  }
+
+  /* SETTINGS */
+
+  public void setWindowOpaqueOnDragging(boolean isOpaque) {
+    this.isWindowOpaqueOnDragging = isOpaque;
   }
 
   /* DOCKING CORE */

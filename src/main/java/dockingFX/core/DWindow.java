@@ -22,6 +22,7 @@ public class DWindow {
   // Constants
   private static final double DEFAULT_FLOATING_WIDTH = 250;
   private static final double DEFAULT_FLOATING_HEIGHT = 200;
+  private static final double DEFAULT_FLOATING_OPACITY = 0.5;
   private static final int UNDOCK_MINIMUM_DISTANCE = 20;
 
   // Dragging attributes
@@ -170,20 +171,6 @@ public class DWindow {
   public void setContent(Node content) {
     floatingTabPane.getTabs().getFirst().setContent(content);
   }
-  
-  /** 
-   * Sets whether the floating window will be docked onto the docker when the close button is clicked.
-   */
-  public void setDockOnClose(boolean isDockOnClose) {
-    this.isDockOnClose = isDockOnClose;
-  }
-  
-  /**
-   * Returns whether the floating window will be docked onto the docker when the close button is clicked.
-   */
-  public boolean isDockOnClose() {
-    return isDockOnClose;
-  }
 
   /**
    * Sets the event handler for the close event.
@@ -210,6 +197,23 @@ public class DWindow {
     this.onUndockEvent = onUndockEvent;
   }
 
+  /* SETTINGS */
+
+  /**
+   * Sets whether the floating window will be docked onto the docker when the close button is clicked.
+   */
+  public void setDockOnClose(boolean isDockOnClose) {
+    this.isDockOnClose = isDockOnClose;
+  }
+
+  /**
+   * Returns whether the floating window will be docked onto the docker when the close button is clicked.
+   */
+  public boolean isDockOnClose() {
+    return isDockOnClose;
+  }
+
+
   /* CALLBACKS BELOW */
 
   void onTabDropped(MouseEvent event) {
@@ -227,6 +231,7 @@ public class DWindow {
     }
 
     docker.dockIndicator.hideDockIndicator();
+    floatingStage.setOpacity(1);
   }
 
   void onTabUndockedDragged(MouseEvent event) {
@@ -238,6 +243,10 @@ public class DWindow {
     floatingStage.setY(mouseY - yOffset - decorationBarHeight);
 
     docker.dockIndicator.showDockIndicator(mouseX, mouseY);
+
+    if (!docker.isWindowOpaqueOnDragging && floatingStage.getOpacity() == 1) {
+      floatingStage.setOpacity(DEFAULT_FLOATING_OPACITY);
+    }
   }
 
   private void onTabDockedDragged(MouseEvent event) {
@@ -257,6 +266,10 @@ public class DWindow {
 
     if (dragDistance > UNDOCK_MINIMUM_DISTANCE) {
       docker.undockTab(this);
+
+      if (!docker.isWindowOpaqueOnDragging) {
+        floatingStage.setOpacity(DEFAULT_FLOATING_OPACITY);
+      }
     }
   }
 
