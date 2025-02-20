@@ -36,6 +36,7 @@ public class DWindow {
   final TabPane floatingTabPane;
 
   // Listeners
+  private EventHandler<WindowEvent> onCloseEvent;
   EventHandler<ActionEvent> onDockEvent;
   EventHandler<ActionEvent> onUndockEvent;
   
@@ -178,7 +179,7 @@ public class DWindow {
    * @param event the event handler for the close event
    */
   public void setOnClose(EventHandler<WindowEvent> event) {
-    floatingStage.setOnCloseRequest(event);
+    this.onCloseEvent = event;
   }
 
   /**
@@ -282,11 +283,17 @@ public class DWindow {
   private void onFloatingClose(WindowEvent event) {
     // Check isDockOnClose to prevent docking when the window is closed by the user
     if (!isDockOnClose) {
+      // Call the user-defined event handler
+      if (onCloseEvent != null) {
+        onCloseEvent.handle(event);
+      }
+
+      // Close the window
       docker.removeFloatingWindow(this);
       floatingStage.close();
       return;
     }
-    
+
     double floatingX = floatingStage.getX();
     double floatingY = floatingStage.getY();
     double floatingWidth = floatingStage.getWidth();
