@@ -418,10 +418,11 @@ public class Docker {
     // Recursively collapse SplitPanes
     Consumer<SplitPane> recursiveCollapse = new Consumer<SplitPane>() {
       @Override
-      public void accept(SplitPane splitPane) {
+      public void accept(SplitPane parentSplitPane) {
         // Empty checks and collapsing single-child SplitPanes
         List<SplitPane> emptySplitPanes = new ArrayList<>();
-        for (Node node : splitPane.getItems()) {
+        for (int index = 0; index < parentSplitPane.getItems().size(); index++) {
+          Node node = parentSplitPane.getItems().get(index);
           if (!(node instanceof SplitPane childSplitPane)) {
             continue;
           }
@@ -437,28 +438,58 @@ public class Docker {
           // If the SplitPane has only one child, then promote that child
           else if (childSplitPane.getItems().size() == 1) {
             Node child = childSplitPane.getItems().getFirst();
-            SplitPane parentSplitPane = findParentSplitPane(childSplitPane);
 
-            // Restore the parent divider positions
-            if (parentSplitPane != null) {
-              int index = parentSplitPane.getItems().indexOf(childSplitPane);
-              if (index != -1) {
-                double[] parentDividerPositions = parentSplitPane.getDividerPositions();
-                childSplitPane.getItems().remove(child);
-                parentSplitPane.getItems().set(index, child);
-                parentSplitPane.setDividerPositions(parentDividerPositions);
+            // If the child is a SplitPane with the same orientation, merge them
+            if (child instanceof SplitPane grandChildSplitPane && grandChildSplitPane.getOrientation() == parentSplitPane.getOrientation()) {
+              // Get the original divider positions
+              double[] parentDividerPositions = parentSplitPane.getDividerPositions();
+              double[] childDividerPositions = grandChildSplitPane.getDividerPositions();
 
-                emptySplitPanes.add(childSplitPane);
+              // Calculate the total size of the grandchild SplitPane
+              int leftIndex = index - 1;
+              double leftPos = (leftIndex >= 0) ? parentDividerPositions[leftIndex] : 0.0;
+              double rightPos = (index < parentDividerPositions.length) ? parentDividerPositions[leftIndex + 1] : 1.0;
+              double totalSize = rightPos - leftPos;
+
+              // Remove the child SplitPane and add the grandchild SplitPane
+              parentSplitPane.getItems().remove(index);
+              parentSplitPane.getItems().addAll(index, grandChildSplitPane.getItems());
+
+              // Calculate the new divider positions
+              List<Double> newDividers = new ArrayList<>();
+              for (int i = 0; i < index; i++) {
+                newDividers.add(parentDividerPositions[i]);
               }
+              for (double divider : childDividerPositions) {
+                newDividers.add(leftPos + divider * totalSize);
+              }
+              for (int i = index; i < parentDividerPositions.length; i++) {
+                newDividers.add(parentDividerPositions[i]);
+              }
+
+              // Update the indices
+              index--;
+              index += grandChildSplitPane.getItems().size();
+
+              // Set the new divider positions
+              parentSplitPane.setDividerPositions(newDividers.stream().mapToDouble(Double::doubleValue).toArray());
+
+              // Add the grandchild SplitPane to the empty list
+              emptySplitPanes.add(childSplitPane);
+              emptySplitPanes.add(grandChildSplitPane);
             } else {
+              // Restore the original divider positions
+              double[] parentDividerPositions = parentSplitPane.getDividerPositions();
               childSplitPane.getItems().remove(child);
-              mainStage.getScene().setRoot((SplitPane) child);
+              parentSplitPane.getItems().set(index, child);
+              parentSplitPane.setDividerPositions(parentDividerPositions);
+
               emptySplitPanes.add(childSplitPane);
             }
           }
         }
         splitPanes.removeAll(emptySplitPanes);
-        splitPane.getItems().removeAll(emptySplitPanes);
+        parentSplitPane.getItems().removeAll(emptySplitPanes);
       }
     };
 
