@@ -38,8 +38,8 @@ public class Main extends Application {
     });
 
     // Configure the docker
-    docker.reformat(); // <-- Automatically reformat the windows
-    // docker.setWindowOpaqueOnDragging(true); // <-- Uncomment this line to enable transparency
+    docker.reformat();                              // <-- Automatically reformat the windows
+    // docker.setWindowOpaqueOnDragging(true);      // <-- Uncomment this line to disable transparency
 
     // Set the docker UI style
     docker.addStyleSheet(DOCKER_STYLE_LIGHT_CSS);

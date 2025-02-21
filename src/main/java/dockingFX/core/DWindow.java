@@ -1,5 +1,6 @@
 package dockingFX.core;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
@@ -224,11 +225,17 @@ public class DWindow {
     if (docker.dockIndicator.isMouseInsideIndicator(mouseX, mouseY)) {
       TabPane targetTabPane = docker.findTabPaneUnderMouse(mouseX, mouseY);
 
+      // Let the UI set the hoverProperty to false
+      floatingTabPane.setMouseTransparent(true);
+
       if (targetTabPane != null) {
         docker.dockTab(this, targetTabPane, docker.dockIndicator.indicatorPosition);
       } else if (!docker.isMouseInsideMainScene(mouseX, mouseY)) {
         docker.dockTab(this, null, docker.dockIndicator.indicatorPosition);
       }
+
+      // Reset the mouse transparency
+      Platform.runLater(() -> floatingTabPane.setMouseTransparent(false));
     }
 
     docker.dockIndicator.hideDockIndicator();
