@@ -1,6 +1,7 @@
 package dockingFX.core;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -10,6 +11,7 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -42,7 +44,7 @@ public class Docker {
    * The position of the docking.
    */
   public enum DockPosition {
-    NONE, LEFT, RIGHT, TOP, BOTTOM
+    NONE, LEFT, RIGHT, TOP, BOTTOM, CENTER
   }
 
   /* APIS BELOW */
@@ -112,8 +114,13 @@ public class Docker {
     // Create a TabPane to hold the content
     TabPane floatingTabPane = new TabPane();
     floatingTabPane.getStyleClass().add("dock-tab-pane");
+
+    Label tabLabel = new Label();
+    tabLabel.getStyleClass().add("dock-tab-label");
+    tabLabel.textProperty().bind(title);
+
     Tab tab = new Tab();
-    tab.textProperty().bind(title);
+    tab.setGraphic(tabLabel);
     tab.getStyleClass().add("dock-tab");
     tab.setClosable(false);
     tab.setContent(content);
@@ -139,21 +146,6 @@ public class Docker {
    */
   public Stage getMainStage() {
     return mainStage;
-  }
-
-  /**
-   * Returns whether the specified floating window is docked to the main stage.
-   *
-   * @param dWindow the floating window to check
-   * @return true if the floating window is docked, false otherwise
-   */
-  public boolean isDocked(DWindow dWindow) {
-    for (SplitPane pane : splitPanes) {
-      if (pane.getItems().contains(dWindow.floatingTabPane)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   /**
@@ -232,7 +224,7 @@ public class Docker {
     addTabToDocker(dWindow.floatingTabPane, destTabPane, dockPosition);
 
     // Hide the floating stage
-    dWindow.floatingStage.setScene(null);
+    dWindow.isDocked = true;
     dWindow.floatingStage.setOpacity(0);
     dWindow.floatingStage.hide();
 
@@ -252,13 +244,19 @@ public class Docker {
     double width = floatingTabPane.getWidth();
 
     // Remove the TabPane from the Docker
-    removeTabFromDocker(floatingTabPane);
+    // TODO: MAKE EVERY DOCKING TO BE TAB BASED INSTEAD OF TABPANE BASED. SO THE REMOVETABPANE METHOD
+    //       SHOULD ONLY BE CALLED WHEN THE LAST TAB IS REMOVED
+    removeTabFromDocker((Tab)floatingTabPane.getTabs().getFirst().getUserData());
+    removeTabPaneFromDocker(floatingTabPane);
     collapseSplitPanes();
 
     // Set the scene of the floating window
-    Scene newScene = new Scene(floatingTabPane);
-    newScene.getStylesheets().setAll(mainStage.getScene().getStylesheets());
-    floatingWindow.setScene(newScene);
+    if (floatingTabPane.getScene() == null) {
+      Scene newScene = new Scene(floatingTabPane);
+      newScene.getStylesheets().setAll(mainStage.getScene().getStylesheets());
+      floatingWindow.setScene(newScene);
+    }
+
     floatingWindow.setWidth(width);
     floatingWindow.setHeight(height);
     floatingWindow.setOpacity(1);
@@ -269,6 +267,9 @@ public class Docker {
     if (dWindow.onUndockEvent != null) {
       dWindow.onUndockEvent.handle(null);
     }
+
+    // Set the isDocked flag to false
+    dWindow.isDocked = false;
   }
 
   /* PACKAGE-PRIVATE METHODS */
@@ -318,6 +319,31 @@ public class Docker {
     SplitPane targetSplitPane = findParentSplitPane(destTabPane);
     targetSplitPane = (destTabPane == null) ? (SplitPane) mainStage.getScene().getRoot() : targetSplitPane == null ? new SplitPane() : targetSplitPane;
     targetSplitPane.getStyleClass().add("dock-split-pane");
+
+    // Center dock position case
+    if (dockPosition == DockPosition.CENTER) {
+      assert destTabPane != null;
+
+      Tab srcTab = srcTabPane.getTabs().getFirst();
+
+      Label tabLabel = new Label();
+      tabLabel.getStyleClass().add("dock-tab-label");
+      Label srcLabel = (Label) srcTab.getGraphic();
+      tabLabel.textProperty().bind(srcLabel.textProperty());
+      tabLabel.setOnMouseDragged(event -> {
+        srcLabel.getOnMouseDragged().handle(event);
+      });
+
+      Tab newTab = new Tab();
+      newTab.getStyleClass().add("dock-tab");
+      newTab.setGraphic(tabLabel);
+      newTab.setContent(srcTab.getContent());
+      destTabPane.getTabs().add(newTab);
+
+      srcTab.setUserData(newTab);
+
+      return;
+    }
 
     // Initial divider positions
     double[] originalPositions = targetSplitPane.getDividerPositions();
@@ -383,7 +409,18 @@ public class Docker {
     }
   }
 
-  private void removeTabFromDocker(TabPane tabPane) {
+  private void removeTabFromDocker(Tab tab) {
+    for (SplitPane splitPane : splitPanes) {
+      for (Node node : splitPane.getItems()) {
+        if (node instanceof TabPane tabPane && tabPane.getTabs().contains(tab)) {
+          tabPane.getTabs().remove(tab);
+          return;
+        }
+      }
+    }
+  }
+
+  private void removeTabPaneFromDocker(TabPane tabPane) {
     for (SplitPane splitPane : splitPanes) {
       if (splitPane.getItems().contains(tabPane)) {
         // Store the original positions and count

@@ -19,8 +19,8 @@ import javafx.stage.StageStyle;
  */
 public class DIndicator {
   // Constants
-  private static final int DOCK_INDICATOR_WIDTH = 40;
-  private static final int DOCK_INDICATOR_HEIGHT = 40;
+  private static final int DOCK_INDICATOR_WIDTH = 25;
+  private static final int DOCK_INDICATOR_HEIGHT = 25;
   private static final double INDICATOR_INNER_SHIFT_OFFSET = 20;
   private static final double INDICATOR_OUTER_SHIFT_OFFSET = 10;
 
@@ -135,7 +135,7 @@ public class DIndicator {
 
   /* HELPER METHODS */
 
-  private Point2D[] getTabPaneEdgeMidpoints(TabPane tabPane) {
+  static private Point2D[] getTabPaneEdgeMidpoints(TabPane tabPane) {
     Bounds bounds = tabPane.localToScreen(tabPane.getBoundsInLocal());
 
     double leftX = bounds.getMinX();
@@ -150,11 +150,12 @@ public class DIndicator {
         new Point2D(leftX, centerY),   // Left center
         new Point2D(rightX, centerY),  // Right center
         new Point2D(centerX, topY),    // Top center
-        new Point2D(centerX, bottomY)  // Bottom center
+        new Point2D(centerX, bottomY), // Bottom center
+        new Point2D(centerX, centerY)  // Center
     };
   }
 
-  private Point2D[] getStageEdgeMidpoints(Stage stage) {
+  static private Point2D[] getStageEdgeMidpoints(Stage stage) {
     double stageX = stage.getScene().getWindow().getX();
     double stageY = stage.getScene().getWindow().getY();
     double stageWidth = stage.getWidth();
@@ -174,12 +175,17 @@ public class DIndicator {
     };
   }
 
-  private Map.Entry<Docker.DockPosition, Point2D> getClosestEdge(Point2D[] midpoints, double mouseX, double mouseY) {
+  static private Map.Entry<Docker.DockPosition, Point2D> getClosestEdge(Point2D[] midpoints, double mouseX, double mouseY) {
     Map<Docker.DockPosition, Point2D> edges = new HashMap<>();
     edges.put(Docker.DockPosition.LEFT, midpoints[0]);   // Left center
     edges.put(Docker.DockPosition.RIGHT, midpoints[1]);  // Right center
     edges.put(Docker.DockPosition.TOP, midpoints[2]);    // Top center
     edges.put(Docker.DockPosition.BOTTOM, midpoints[3]); // Bottom center
+
+    // Check if there is a center point
+    if (midpoints.length >= 5) {
+      edges.put(Docker.DockPosition.CENTER, midpoints[4]); // Center
+    }
 
     Docker.DockPosition closestEdge = null;
     Point2D closestPoint = null;

@@ -29,14 +29,15 @@ public class DWindow {
   private static final int UNDOCK_MINIMUM_DISTANCE = 20;
 
   // Dragging attributes
-  private double xOffset = 0;
-  private double yOffset = 0;
+  double xOffset = 0;
+  double yOffset = 0;
   private Point2D dragStartPoint = null;
 
   // Docking attributes
   final Docker docker;
   final Stage floatingStage;
   final TabPane floatingTabPane;
+  boolean isDocked = false;
 
   // Listeners
   private EventHandler<WindowEvent> onCloseEvent;
@@ -76,11 +77,12 @@ public class DWindow {
     floatingScene.getRoot().applyCss();
 
     // Add event listeners for tabs for dragging and docking
-    Node tabHeaderArea = floatingTabPane.getTabs().getFirst().getGraphic();
+    Tab tab = floatingTabPane.getTabs().getFirst();
+    Node tabHeaderArea = tab.getGraphic();
     if (tabHeaderArea != null) {
       tabHeaderArea.setOnMousePressed(this::onTabPressed);
       tabHeaderArea.setOnMouseDragged(event -> {
-        if (docker.isDocked(this)) {
+        if (isDocked) {
           onTabDockedDragged(event);
         } else {
           onTabUndockedDragged(event);
@@ -216,7 +218,6 @@ public class DWindow {
   public boolean isDockOnClose() {
     return isDockOnClose;
   }
-
 
   /* CALLBACKS BELOW */
 
