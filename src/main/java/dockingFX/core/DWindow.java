@@ -7,6 +7,8 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
@@ -74,11 +76,11 @@ public class DWindow {
     floatingScene.getRoot().applyCss();
 
     // Add event listeners for tabs for dragging and docking
-    Node tabHeaderArea = floatingTabPane.lookup(".tab");
+    Node tabHeaderArea = floatingTabPane.getTabs().getFirst().getGraphic();
     if (tabHeaderArea != null) {
       tabHeaderArea.setOnMousePressed(this::onTabPressed);
       tabHeaderArea.setOnMouseDragged(event -> {
-        if (docker != null && docker.isDocked(this)) {
+        if (docker.isDocked(this)) {
           onTabDockedDragged(event);
         } else {
           onTabUndockedDragged(event);
