@@ -5,12 +5,9 @@ import dockingFX.core.Docker;
 import java.util.Objects;
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.TriangleMesh;
 import javafx.stage.Stage;
 
 public class Main extends Application {
