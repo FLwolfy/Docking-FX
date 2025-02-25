@@ -66,7 +66,7 @@ docker.addStyleSheet(DOCKER_STYLE_DARK_CSS); // Dark theme
 ```
 
 ```java
-docker.addStyleSheet(YOUR_CUSTOM_STYLE_CSS); // Dark theme
+docker.addStyleSheet(YOUR_CUSTOM_STYLE_CSS); // Your custom theme
 ```
 
 ## Dependencies
