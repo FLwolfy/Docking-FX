@@ -3,12 +3,14 @@ package dockingFX.core;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -285,17 +287,20 @@ public class DWindow {
     double mouseY = event.getScreenY();
 
     if (isDocked) {
-      // Calculate the offset of the tab
+      // Get the target tab and tab pane
       Tab targetTab = (Tab) floatingTabPane.getTabs().getFirst().getUserData();
       TabPane targetTabPane = targetTab.getTabPane();
-      Point2D targetTabPanePos = targetTabPane.localToScreen(0, 0);
-      Point2D firstTabPos = targetTabPane.getTabs().getFirst().getGraphic().localToScreen(0, 0);
-      Point2D tabOffset = new Point2D(targetTabPanePos.getX() - firstTabPos.getX(), targetTabPanePos.getY() - firstTabPos.getY());
+      Region targetTabHeaderArea = (Region) targetTabPane.lookup(".tab-header-area");
 
-      // Calculate the offset of the mouse
-      Point2D targetTabOffset = targetTab.getGraphic().localToScreen(0,0);
-      xOffset = mouseX - targetTabOffset.getX() - tabOffset.getX();
-      yOffset = mouseY - targetTabOffset.getY() - tabOffset.getY();
+      // Calculate the offset of the tab
+      Insets targetTabHeaderAreaPadding = targetTabHeaderArea.getPadding();
+      Point2D targetTabOffset = targetTab.getGraphic().screenToLocal(mouseX, mouseY);
+
+      double tabOffsetX = targetTabOffset.getX() + targetTabHeaderAreaPadding.getLeft();
+      double headerOffsetX = targetTabHeaderArea.screenToLocal(mouseX, mouseY).getX();
+
+      xOffset = Math.min(tabOffsetX, headerOffsetX);
+      yOffset = targetTabOffset.getY() + targetTabHeaderAreaPadding.getTop();
     } else {
       xOffset = event.getSceneX();
       yOffset = event.getSceneY();

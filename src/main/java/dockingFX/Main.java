@@ -6,7 +6,11 @@ import java.util.Objects;
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.TriangleMesh;
 import javafx.stage.Stage;
 
 public class Main extends Application {
@@ -21,11 +25,11 @@ public class Main extends Application {
     Docker docker = new Docker(primaryStage);
 
     // Create some windows
-    DWindow dockingWindow1 = docker.createDWindow(new SimpleStringProperty("Auto Docked Window 1"), null, Docker.DockPosition.LEFT);
-    DWindow dockingWindow2 = docker.createDWindow(new SimpleStringProperty("Auto Docked Window 2"), null, Docker.DockPosition.TOP);
-    DWindow dockingWindow3 = docker.createDWindow(new SimpleStringProperty("Auto Docked Window 3"), null, Docker.DockPosition.RIGHT);
-    DWindow dockingWindow4 = docker.createDWindow(new SimpleStringProperty("Auto Docked Window 4"), null, Docker.DockPosition.BOTTOM);
-    DWindow dockingWindow5 = docker.createDWindow(new SimpleStringProperty("Undocked Closable Window"), null, Docker.DockPosition.NONE);
+    DWindow dockingWindow1 = docker.createDWindow(new SimpleStringProperty("Auto Docked Window 1"), new Rectangle(100, 100, Color.RED), Docker.DockPosition.LEFT);
+    DWindow dockingWindow2 = docker.createDWindow(new SimpleStringProperty("Auto Docked Window 2"), new Circle(100, Color.BLUE), Docker.DockPosition.TOP);
+    DWindow dockingWindow3 = docker.createDWindow(new SimpleStringProperty("Auto Docked Window 3"), new Rectangle(100, 100, Color.GREEN), Docker.DockPosition.RIGHT);
+    DWindow dockingWindow4 = docker.createDWindow(new SimpleStringProperty("Auto Docked Window 4"), new Circle(100, Color.GOLD), Docker.DockPosition.BOTTOM);
+    DWindow dockingWindow5 = docker.createDWindow(new SimpleStringProperty("Undocked Closable Window"), new Rectangle(100, 100, Color.BLACK), Docker.DockPosition.NONE);
 
     // Configure the windows
     dockingWindow1.setDockOnClose(true);  // This is the default setting

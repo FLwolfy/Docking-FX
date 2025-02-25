@@ -9,6 +9,7 @@ import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -16,6 +17,7 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
@@ -241,12 +243,19 @@ public class Docker {
     TabPane floatingTabPane = dWindow.floatingTabPane;
     Stage floatingWindow = dWindow.floatingStage;
 
-    // Remove the TabPane from the Docker
+    // Get the target Tab and TabPane
     Tab targetTab = (Tab) floatingTabPane.getTabs().getFirst().getUserData();
     TabPane targetTabPane = targetTab.getTabPane();
+
+    // Pass back the content to the original Tab
+    Node content = targetTab.getContent();
+    dWindow.floatingTabPane.getTabs().getFirst().setContent(content);
+    targetTab.setContent(null);
+
+    // Remove the TabPane from the Docker
     if (targetTabPane.getTabs().size() == 1) {
-      removeTabPaneFromDocker(targetTabPane);
       removeTabFromDocker(targetTab);
+      removeTabPaneFromDocker(targetTabPane);
       collapseSplitPanes();
     } else {
       removeTabFromDocker(targetTab);
@@ -333,7 +342,7 @@ public class Docker {
     Label srcTabLabel = (Label) srcTab.getGraphic();
     Node srcTabContent = srcTab.getContent();
 
-    // Create a new TabPane with the same properties
+    // Create a new Tab with the same properties with the source Tab, and pass the content
     Label newTabLabel = new Label();
     newTabLabel.getStyleClass().add("dock-tab-label");
     newTabLabel.textProperty().bind(srcTabLabel.textProperty());
@@ -348,9 +357,7 @@ public class Docker {
     newTab.setClosable(srcTab.isClosable());
     newTab.setGraphic(newTabLabel);
     newTab.setContent(srcTabContent);
-    TabPane newTabPane = new TabPane();
-    newTabPane.getStyleClass().add("dock-tab-pane");
-    newTabPane.getTabs().add(newTab);
+    srcTab.setContent(null);
 
     // Link the new tab to the old tab
     srcTab.setUserData(newTab);
@@ -359,10 +366,17 @@ public class Docker {
     if (dockPosition == DockPosition.CENTER) {
       assert destTabPane != null;
       destTabPane.getTabs().add(newTab);
+      destTabPane.getSelectionModel().select(newTab);
     }
 
     // Other dock positions
     else {
+      // Create a new TabPane
+      TabPane newTabPane = new TabPane();
+      newTabPane.getStyleClass().add("dock-tab-pane");
+      newTabPane.getTabs().add(newTab);
+      newTabPane.getSelectionModel().select(newTab);
+
       // Initial divider positions
       double[] originalPositions = targetSplitPane.getDividerPositions();
       double[] newPositions = new double[originalPositions.length + 1];
