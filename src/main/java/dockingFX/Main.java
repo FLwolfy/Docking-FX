@@ -42,8 +42,8 @@ public class Main extends Application {
     // docker.setWindowOpaqueOnDragging(true);      // <-- Uncomment this line to disable transparency
 
     // Set the docker UI style
-    docker.addStyleSheet(DOCKER_STYLE_LIGHT_CSS);
-    // docker.addStyleSheet(DOCKER_STYLE_DARK_CSS); // <-- Uncomment this line to use the dark theme
+    // docker.addStyleSheet(DOCKER_STYLE_LIGHT_CSS);
+    docker.addStyleSheet(DOCKER_STYLE_DARK_CSS); // <-- Uncomment this line to use the dark theme
 
     // Show the stage
     primaryStage.setTitle("DockingFX");

@@ -27,6 +27,7 @@
   -fx-background-color: #333333;
   -fx-border-color: #666666;
   -fx-border-radius: 6;
+  -fx-padding: 0;
 }
 
 .dock-tab:hover {
@@ -36,6 +37,7 @@
 .dock-tab-label {
   -fx-text-fill: #ffffff;
   -fx-font: 14px "Arial";
+  -fx-padding: 4px;
 }
 
 .tab-header-area {

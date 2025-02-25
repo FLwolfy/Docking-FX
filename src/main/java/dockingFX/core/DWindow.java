@@ -3,11 +3,9 @@ package dockingFX.core;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.MouseEvent;
@@ -29,14 +27,15 @@ public class DWindow {
   private static final int UNDOCK_MINIMUM_DISTANCE = 20;
 
   // Dragging attributes
-  private double xOffset = 0;
-  private double yOffset = 0;
+  double xOffset = 0;
+  double yOffset = 0;
   private Point2D dragStartPoint = null;
 
   // Docking attributes
   final Docker docker;
   final Stage floatingStage;
   final TabPane floatingTabPane;
+  boolean isDocked = false;
 
   // Listeners
   private EventHandler<WindowEvent> onCloseEvent;
@@ -76,11 +75,12 @@ public class DWindow {
     floatingScene.getRoot().applyCss();
 
     // Add event listeners for tabs for dragging and docking
-    Node tabHeaderArea = floatingTabPane.getTabs().getFirst().getGraphic();
+    Tab tab = floatingTabPane.getTabs().getFirst();
+    Node tabHeaderArea = tab.getGraphic();
     if (tabHeaderArea != null) {
       tabHeaderArea.setOnMousePressed(this::onTabPressed);
       tabHeaderArea.setOnMouseDragged(event -> {
-        if (docker.isDocked(this)) {
+        if (isDocked) {
           onTabDockedDragged(event);
         } else {
           onTabUndockedDragged(event);
@@ -217,7 +217,6 @@ public class DWindow {
     return isDockOnClose;
   }
 
-
   /* CALLBACKS BELOW */
 
   void onTabDropped(MouseEvent event) {
@@ -266,13 +265,11 @@ public class DWindow {
     double dragOffsetX = mouseX - dragStartPoint.getX();
     double dragOffsetY = mouseY - dragStartPoint.getY();
     double dragDistance = Math.sqrt(dragOffsetX * dragOffsetX + dragOffsetY * dragOffsetY);
+    double decorationBarHeight = docker.mainStage.getHeight() - docker.mainStage.getScene().getHeight();
 
-    Bounds bounds = floatingTabPane.localToScreen(floatingTabPane.getBoundsInLocal());
-    xOffset = mouseX - bounds.getMinX() - dragOffsetX;
-    yOffset = mouseY - bounds.getMinY() - dragOffsetY;
-
+    // In case of the splashing in the first frame
     floatingStage.setX(mouseX - xOffset);
-    floatingStage.setY(mouseY - yOffset);
+    floatingStage.setY(mouseY - yOffset - decorationBarHeight);
 
     if (dragDistance > UNDOCK_MINIMUM_DISTANCE) {
       docker.undockTab(this);
@@ -284,9 +281,26 @@ public class DWindow {
   }
 
   private void onTabPressed(MouseEvent event) {
-    xOffset = event.getSceneX();
-    yOffset = event.getSceneY();
-    dragStartPoint = new Point2D(event.getScreenX(), event.getScreenY());
+    double mouseX = event.getScreenX();
+    double mouseY = event.getScreenY();
+
+    if (isDocked) {
+      // Calculate the offset of the tab
+      Tab targetTab = (Tab) floatingTabPane.getTabs().getFirst().getUserData();
+      TabPane targetTabPane = targetTab.getTabPane();
+      Point2D targetTabPanePos = targetTabPane.localToScreen(0, 0);
+      Point2D firstTabPos = targetTabPane.getTabs().getFirst().getGraphic().localToScreen(0, 0);
+      Point2D tabOffset = new Point2D(targetTabPanePos.getX() - firstTabPos.getX(), targetTabPanePos.getY() - firstTabPos.getY());
+
+      // Calculate the offset of the mouse
+      Point2D targetTabOffset = targetTab.getGraphic().localToScreen(0,0);
+      xOffset = mouseX - targetTabOffset.getX() - tabOffset.getX();
+      yOffset = mouseY - targetTabOffset.getY() - tabOffset.getY();
+    } else {
+      xOffset = event.getSceneX();
+      yOffset = event.getSceneY();
+    }
+    dragStartPoint = new Point2D(mouseX, mouseY);
   }
 
   private void onFloatingClose(WindowEvent event) {
