@@ -3,6 +3,7 @@ package dockingFX.core;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Scene;
@@ -202,5 +203,4 @@ public class DIndicator {
 
     return new AbstractMap.SimpleEntry<>(closestEdge, closestPoint);
   }
-
 }

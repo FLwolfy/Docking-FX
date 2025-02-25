@@ -144,6 +144,7 @@ public class DWindow {
   private void onFloatingClose(WindowEvent event) {
     if (!isDockOnClose) {
       handleCustomCloseEvent(event);
+      docker.removeFloatingWindow(this);
       return;
     }
 
