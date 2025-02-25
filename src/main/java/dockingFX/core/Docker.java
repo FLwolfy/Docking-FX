@@ -1,15 +1,12 @@
 package dockingFX.core;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
-
 import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -17,7 +14,6 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
@@ -189,7 +185,7 @@ public class Docker {
    */
   public void reformat() {
     // Recursively reformat SplitPanes
-    Consumer<SplitPane> recursiveReformat = new Consumer<SplitPane>() {
+    Consumer<SplitPane> recursiveReformat = new Consumer<>() {
       @Override
       public void accept(SplitPane splitPane) {
         int size = splitPane.getItems().size();
@@ -346,12 +342,8 @@ public class Docker {
     Label newTabLabel = new Label();
     newTabLabel.getStyleClass().add("dock-tab-label");
     newTabLabel.textProperty().bind(srcTabLabel.textProperty());
-    newTabLabel.setOnMousePressed(event -> {
-      srcTabLabel.getOnMousePressed().handle(event);
-    });
-    newTabLabel.setOnMouseDragged(event -> {
-      srcTabLabel.getOnMouseDragged().handle(event);
-    });
+    newTabLabel.setOnMousePressed(event -> srcTabLabel.getOnMousePressed().handle(event));
+    newTabLabel.setOnMouseDragged(event -> srcTabLabel.getOnMouseDragged().handle(event));
     Tab newTab = new Tab();
     newTab.getStyleClass().add("dock-tab");
     newTab.setClosable(srcTab.isClosable());
@@ -493,7 +485,7 @@ public class Docker {
 
   private void collapseSplitPanes() {
     // Recursively collapse SplitPanes
-    Consumer<SplitPane> recursiveCollapse = new Consumer<SplitPane>() {
+    Consumer<SplitPane> recursiveCollapse = new Consumer<>() {
       @Override
       public void accept(SplitPane parentSplitPane) {
         // Empty checks and collapsing single-child SplitPanes
