@@ -55,48 +55,10 @@ public class Docker {
    */
   public Docker(Stage mainStage) {
     this.mainStage = mainStage;
-
-    SplitPane splitPane = new SplitPane();
-    splitPane.setOrientation(Orientation.HORIZONTAL);
-    splitPane.getStyleClass().add("dock-split-pane");
-    splitPanes.add(splitPane);
-
-    // Set the main stage's scene
-    Scene mainScene = new Scene(splitPane, mainStage.getWidth(), mainStage.getHeight());
-    mainStage.setScene(mainScene);
-
-    // Create the dock indicator
     this.dockIndicator = new DIndicator(this);
-
-    // Set the main stage's event listeners
-    mainStage.setOnShown(event -> {
-      for (DWindow floatingWindow : floatingWindows) {
-        if (floatingWindow.floatingStage.getOpacity() != 0) {
-          floatingWindow.floatingStage.show();
-          Platform.runLater(floatingWindow.floatingStage::toFront);
-        }
-      }
-    });
-    mainStage.setOnCloseRequest(event -> {
-      for (DWindow floatingWindow : floatingWindows) {
-        floatingWindow.floatingStage.close();
-      }
-      dockIndicator.indicatorStage.close();
-      floatingWindows.clear();
-    });
-
-    // This is used for the first undock event
-    mainStage.addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> {
-      if (undockNewWindow != null) {
-        undockNewWindow.onTabUndockedDragged(event);
-      }
-    });
-    mainStage.addEventFilter(MouseEvent.MOUSE_RELEASED, event -> {
-      if (undockNewWindow != null) {
-        undockNewWindow.onTabDropped(event);
-        undockNewWindow = null;
-      }
-    });
+    initializeSplitPane();
+    initializeScene();
+    initializeEventHandlers();
   }
 
   /**
@@ -110,29 +72,13 @@ public class Docker {
   public DWindow createDWindow(StringProperty title, Node content, DockPosition dockPosition) {
     Stage floatingStage = new Stage();
     floatingStage.initStyle(StageStyle.UTILITY);
-
-    // Create a TabPane to hold the content
-    TabPane floatingTabPane = new TabPane();
-    floatingTabPane.getStyleClass().add("dock-tab-pane");
-
-    Label tabLabel = new Label();
-    tabLabel.getStyleClass().add("dock-tab-label");
-    tabLabel.textProperty().bind(title);
-
-    Tab tab = new Tab();
-    tab.setGraphic(tabLabel);
-    tab.getStyleClass().add("dock-tab");
-    tab.setClosable(false);
-    tab.setContent(content);
-    floatingTabPane.getTabs().add(tab);
-
-    // Create a DWindow object
+    TabPane floatingTabPane = createTabPane(title, content);
     DWindow dWindow = new DWindow(floatingStage, floatingTabPane, this);
     floatingWindows.add(dWindow);
 
     // Initial dock check
     if (dockPosition != null && dockPosition != DockPosition.NONE) {
-      floatingStage.setOpacity(0);
+      dWindow.floatingStage.setOpacity(0);
       dockTab(dWindow, null, dockPosition);
     }
 
@@ -224,9 +170,7 @@ public class Docker {
     addTabToDocker(dWindow.floatingTabPane, destTabPane, dockPosition);
 
     // Hide the floating stage
-    dWindow.isDocked = true;
-    dWindow.floatingStage.setOpacity(0);
-    dWindow.floatingStage.hide();
+    hideFloatingWindow(dWindow);
 
     // Call the onDockEvent
     if (dWindow.onDockEvent != null) {
@@ -235,20 +179,19 @@ public class Docker {
   }
 
   void undockTab(DWindow dWindow) {
-    // Undock the TabPane from the Docker
     TabPane floatingTabPane = dWindow.floatingTabPane;
     Stage floatingWindow = dWindow.floatingStage;
 
-    // Get the target Tab and TabPane
+    // Get the target Tab and its TabPane
     Tab targetTab = (Tab) floatingTabPane.getTabs().getFirst().getUserData();
     TabPane targetTabPane = targetTab.getTabPane();
 
-    // Pass back the content to the original Tab
+    // Transfer content and update Tab
     Node content = targetTab.getContent();
     dWindow.floatingTabPane.getTabs().getFirst().setContent(content);
     targetTab.setContent(null);
 
-    // Remove the TabPane from the Docker
+    // Remove the TabPane or Tab from the Docker
     if (targetTabPane.getTabs().size() == 1) {
       removeTabFromDocker(targetTab);
       removeTabPaneFromDocker(targetTabPane);
@@ -257,28 +200,14 @@ public class Docker {
       removeTabFromDocker(targetTab);
     }
 
-    // Set the scene of the floating window
-    if (floatingTabPane.getScene() == null) {
-      Scene newScene = new Scene(floatingTabPane);
-      newScene.getStylesheets().setAll(mainStage.getScene().getStylesheets());
-      floatingWindow.setScene(newScene);
-    }
-
-    // Set the current position of the floating window
-    double height = targetTabPane.getHeight();
-    double width = targetTabPane.getWidth();
-    floatingWindow.setWidth(width);
-    floatingWindow.setHeight(height);
-    floatingWindow.setOpacity(1);
-    floatingWindow.show();
+    // Set up the floating window
+    setupFloatingWindow(floatingTabPane, floatingWindow, targetTabPane);
     undockNewWindow = dWindow;
 
-    // Call the onUndockEvent
+    // Trigger undock event and update state
     if (dWindow.onUndockEvent != null) {
       dWindow.onUndockEvent.handle(null);
     }
-
-    // Set the isDocked flag to false
     dWindow.isDocked = false;
   }
 
@@ -313,16 +242,7 @@ public class Docker {
     floatingWindows.remove(dWindow);
   }
 
-  /* HELPER METHODS */
-
-  private SplitPane findParentSplitPane(Node child) {
-    for (SplitPane parent : splitPanes) {
-      if (parent.getItems().contains(child)) {
-        return parent;
-      }
-    }
-    return null;
-  }
+  /* On Dock Action */
 
   private void addTabToDocker(TabPane srcTabPane, TabPane destTabPane, DockPosition dockPosition) {
     // Invalid dock position
@@ -333,6 +253,120 @@ public class Docker {
     targetSplitPane = (destTabPane == null) ? (SplitPane) mainStage.getScene().getRoot() : targetSplitPane == null ? new SplitPane() : targetSplitPane;
     targetSplitPane.getStyleClass().add("dock-split-pane");
 
+    Tab newTab = CreateCorrespondingTab(srcTabPane);
+
+    // Center dock position case
+    if (dockPosition == DockPosition.CENTER) {
+      assert destTabPane != null;
+      dockToCenter(destTabPane, newTab);
+    }
+
+    // Other dock positions
+    else {
+      dockToOther(destTabPane, dockPosition, newTab, targetSplitPane);
+    }
+  }
+
+  private void dockToOther(TabPane destTabPane, DockPosition dockPosition, Tab newTab,
+      SplitPane targetSplitPane) {
+    // Create a new TabPane
+    TabPane newTabPane = new TabPane();
+    newTabPane.getStyleClass().add("dock-tab-pane");
+    newTabPane.getTabs().add(newTab);
+    newTabPane.getSelectionModel().select(newTab);
+
+    // Initial divider positions
+    double[] originalPositions = targetSplitPane.getDividerPositions();
+    double[] newPositions = new double[originalPositions.length + 1];
+
+    // Check dock position
+    boolean isHorizontal = (dockPosition == DockPosition.LEFT
+        || dockPosition == DockPosition.RIGHT);
+    boolean shouldFrontInsert = (dockPosition == DockPosition.LEFT
+        || dockPosition == DockPosition.TOP);
+    boolean shouldInsertDirectly =
+        targetSplitPane.getOrientation() == (isHorizontal ? Orientation.HORIZONTAL
+            : Orientation.VERTICAL)
+            && !targetSplitPane.getItems().isEmpty();
+
+    // Update Index
+    int index = (destTabPane == null) ? -1 : targetSplitPane.getItems().indexOf(destTabPane);
+    index = (index != -1) ? index : shouldFrontInsert ? 0 : targetSplitPane.getItems().size() - 1;
+
+    // Insert Directly to the target SplitPane
+    if (shouldInsertDirectly) {
+      directInsertTab(targetSplitPane, shouldFrontInsert, index, newTabPane, originalPositions,
+          newPositions);
+
+      // Insert into a new SplitPane
+    } else {
+      undirectInsertTab(destTabPane, targetSplitPane, isHorizontal, newTabPane,
+          shouldFrontInsert,
+          index, originalPositions);
+    }
+  }
+
+  private void undirectInsertTab(TabPane destTabPane, SplitPane targetSplitPane, boolean isHorizontal, TabPane newTabPane, boolean shouldFrontInsert,
+      int index, double[] originalPositions) {
+    // Create a new SplitPane if the target SplitPane is not empty
+    SplitPane newSplitPane = new SplitPane();
+    newSplitPane.getStyleClass().add("dock-split-pane");
+
+    newSplitPane.setOrientation(isHorizontal ? Orientation.HORIZONTAL : Orientation.VERTICAL);
+    newSplitPane.getItems().add(newTabPane);
+
+    if (destTabPane != null) {
+      newSplitPane.getItems().add(shouldFrontInsert ? 1 : 0, destTabPane);
+      if (!targetSplitPane.getItems().isEmpty()) {
+        targetSplitPane.getItems().set(index, newSplitPane);
+      }
+    } else {
+      newSplitPane.getItems().add(shouldFrontInsert ? 1 : 0, targetSplitPane);
+    }
+
+    // New divider positions
+    if (originalPositions.length != 0) {
+      targetSplitPane.setDividerPositions(originalPositions);
+    }
+
+    // Remove the old SplitPane if it is empty
+    if (targetSplitPane.getItems().isEmpty()) {
+      newSplitPane.getItems().remove(targetSplitPane);
+      splitPanes.remove(targetSplitPane);
+    }
+
+    // Set the new root of the main stage
+    if (!newSplitPane.getItems().isEmpty()) {
+      splitPanes.add(newSplitPane);
+      if (destTabPane == null) {
+        mainStage.getScene().setRoot(newSplitPane);
+      }
+    }
+  }
+
+  private void directInsertTab(SplitPane targetSplitPane, boolean shouldFrontInsert, int index,
+      TabPane newTabPane, double[] originalPositions, double[] newPositions) {
+    targetSplitPane.getItems().add(shouldFrontInsert ? index : index + 1, newTabPane);
+
+    // New divider positions
+    if (originalPositions.length != 0) {
+      System.arraycopy(originalPositions, 0, newPositions, 0, index);
+      double newDividerPosition = (index == 0) ? originalPositions[0] / 2.0
+          : (index == originalPositions.length) ? (originalPositions[index - 1] + 1.0) / 2.0
+              : (originalPositions[index - 1] + originalPositions[index]) / 2.0;
+      newPositions[index] = newDividerPosition;
+      System.arraycopy(originalPositions, index, newPositions, index + 1,
+          originalPositions.length - index);
+      targetSplitPane.setDividerPositions(newPositions);
+    }
+  }
+
+  private void dockToCenter(TabPane destTabPane, Tab newTab) {
+    destTabPane.getTabs().add(newTab);
+    destTabPane.getSelectionModel().select(newTab);
+  }
+
+  private Tab CreateCorrespondingTab(TabPane srcTabPane) {
     // Get the srcTabPane properties
     Tab srcTab = srcTabPane.getTabs().getFirst();
     Label srcTabLabel = (Label) srcTab.getGraphic();
@@ -353,93 +387,10 @@ public class Docker {
 
     // Link the new tab to the old tab
     srcTab.setUserData(newTab);
-
-    // Center dock position case
-    if (dockPosition == DockPosition.CENTER) {
-      assert destTabPane != null;
-      destTabPane.getTabs().add(newTab);
-      destTabPane.getSelectionModel().select(newTab);
-    }
-
-    // Other dock positions
-    else {
-      // Create a new TabPane
-      TabPane newTabPane = new TabPane();
-      newTabPane.getStyleClass().add("dock-tab-pane");
-      newTabPane.getTabs().add(newTab);
-      newTabPane.getSelectionModel().select(newTab);
-
-      // Initial divider positions
-      double[] originalPositions = targetSplitPane.getDividerPositions();
-      double[] newPositions = new double[originalPositions.length + 1];
-
-      // Check dock position
-      boolean isHorizontal = (dockPosition == DockPosition.LEFT
-          || dockPosition == DockPosition.RIGHT);
-      boolean shouldFrontInsert = (dockPosition == DockPosition.LEFT
-          || dockPosition == DockPosition.TOP);
-      boolean shouldInsertDirectly =
-          targetSplitPane.getOrientation() == (isHorizontal ? Orientation.HORIZONTAL
-              : Orientation.VERTICAL)
-              && !targetSplitPane.getItems().isEmpty();
-
-      // Update Index
-      int index = (destTabPane == null) ? -1 : targetSplitPane.getItems().indexOf(destTabPane);
-      index = (index != -1) ? index : shouldFrontInsert ? 0 : targetSplitPane.getItems().size() - 1;
-
-      // Create a new SplitPane if the target SplitPane is not empty
-      SplitPane newSplitPane = new SplitPane();
-      newSplitPane.getStyleClass().add("dock-split-pane");
-
-      // Check if the target SplitPane is empty
-      if (shouldInsertDirectly) {
-        targetSplitPane.getItems().add(shouldFrontInsert ? index : index + 1, newTabPane);
-
-        // New divider positions
-        if (originalPositions.length != 0) {
-          System.arraycopy(originalPositions, 0, newPositions, 0, index);
-          double newDividerPosition = (index == 0) ? originalPositions[0] / 2.0
-              : (index == originalPositions.length) ? (originalPositions[index - 1] + 1.0) / 2.0
-                  : (originalPositions[index - 1] + originalPositions[index]) / 2.0;
-          newPositions[index] = newDividerPosition;
-          System.arraycopy(originalPositions, index, newPositions, index + 1,
-              originalPositions.length - index);
-          targetSplitPane.setDividerPositions(newPositions);
-        }
-      } else {
-        newSplitPane.setOrientation(isHorizontal ? Orientation.HORIZONTAL : Orientation.VERTICAL);
-        newSplitPane.getItems().add(newTabPane);
-
-        if (destTabPane != null) {
-          newSplitPane.getItems().add(shouldFrontInsert ? 1 : 0, destTabPane);
-          if (!targetSplitPane.getItems().isEmpty()) {
-            targetSplitPane.getItems().set(index, newSplitPane);
-          }
-        } else {
-          newSplitPane.getItems().add(shouldFrontInsert ? 1 : 0, targetSplitPane);
-        }
-
-        // New divider positions
-        if (originalPositions.length != 0) {
-          targetSplitPane.setDividerPositions(originalPositions);
-        }
-      }
-
-      // Remove the old SplitPane if it is empty
-      if (targetSplitPane.getItems().isEmpty()) {
-        newSplitPane.getItems().remove(targetSplitPane);
-        splitPanes.remove(targetSplitPane);
-      }
-
-      // Set the new root of the main stage
-      if (!newSplitPane.getItems().isEmpty()) {
-        splitPanes.add(newSplitPane);
-        if (destTabPane == null) {
-          mainStage.getScene().setRoot(newSplitPane);
-        }
-      }
-    }
+    return newTab;
   }
+
+  /* On Undock Action */
 
   private void removeTabFromDocker(Tab tab) {
     for (SplitPane splitPane : splitPanes) {
@@ -576,4 +527,96 @@ public class Docker {
     }
   }
 
+  /* HELPER METHODS */
+
+  private void initializeSplitPane() {
+    SplitPane splitPane = new SplitPane();
+    splitPane.setOrientation(Orientation.HORIZONTAL);
+    splitPane.getStyleClass().add("dock-split-pane");
+    splitPanes.add(splitPane);
+  }
+
+  private void initializeScene() {
+    Scene mainScene = new Scene(new SplitPane(), mainStage.getWidth(), mainStage.getHeight());
+    mainStage.setScene(mainScene);
+  }
+
+  private void initializeEventHandlers() {
+    mainStage.setOnShown(event -> showFloatingWindows());
+    mainStage.setOnCloseRequest(event -> closeFloatingWindows());
+    initializeUndockEvents();
+  }
+
+  private void initializeUndockEvents() {
+    mainStage.addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> {
+      if (undockNewWindow != null) {
+        undockNewWindow.onTabUndockedDragged(event);
+      }
+    });
+    mainStage.addEventFilter(MouseEvent.MOUSE_RELEASED, event -> {
+      if (undockNewWindow != null) {
+        undockNewWindow.onTabDropped(event);
+        undockNewWindow = null;
+      }
+    });
+  }
+
+  private void showFloatingWindows() {
+    for (DWindow floatingWindow : floatingWindows) {
+      if (floatingWindow.floatingStage.getOpacity() != 0) {
+        floatingWindow.floatingStage.show();
+        Platform.runLater(floatingWindow.floatingStage::toFront);
+      }
+    }
+  }
+
+  private void closeFloatingWindows() {
+    for (DWindow floatingWindow : floatingWindows) {
+      floatingWindow.floatingStage.close();
+    }
+    dockIndicator.indicatorStage.close();
+    floatingWindows.clear();
+  }
+
+  private void hideFloatingWindow(DWindow dWindow) {
+    dWindow.isDocked = true;
+    dWindow.floatingStage.setOpacity(0);
+    dWindow.floatingStage.hide();
+  }
+
+  private void setupFloatingWindow(TabPane floatingTabPane, Stage floatingWindow, TabPane targetTabPane) {
+    if (floatingTabPane.getScene() == null) {
+      Scene newScene = new Scene(floatingTabPane);
+      newScene.getStylesheets().setAll(mainStage.getScene().getStylesheets());
+      floatingWindow.setScene(newScene);
+    }
+    floatingWindow.setWidth(targetTabPane.getWidth());
+    floatingWindow.setHeight(targetTabPane.getHeight());
+    floatingWindow.setOpacity(1);
+    floatingWindow.show();
+  }
+
+  private TabPane createTabPane(StringProperty title, Node content) {
+    TabPane floatingTabPane = new TabPane();
+    floatingTabPane.getStyleClass().add("dock-tab-pane");
+    Label tabLabel = new Label();
+    tabLabel.getStyleClass().add("dock-tab-label");
+    tabLabel.textProperty().bind(title);
+    Tab tab = new Tab();
+    tab.setGraphic(tabLabel);
+    tab.getStyleClass().add("dock-tab");
+    tab.setClosable(false);
+    tab.setContent(content);
+    floatingTabPane.getTabs().add(tab);
+    return floatingTabPane;
+  }
+
+  private SplitPane findParentSplitPane(Node child) {
+    for (SplitPane parent : splitPanes) {
+      if (parent.getItems().contains(child)) {
+        return parent;
+      }
+    }
+    return null;
+  }
 }

@@ -156,11 +156,8 @@ public class DWindow {
   /* HELPER METHODS */
 
   private void initializeWindowSize() {
-    Node content = floatingTabPane.getTabs().getFirst().getContent();
-    double contentWidth = (content == null) ? 0 : content.prefWidth(-1);
-    double contentHeight = (content == null) ? 0 : content.prefHeight(-1);
-    floatingStage.setWidth(contentWidth > 0 ? contentWidth : DEFAULT_FLOATING_WIDTH);
-    floatingStage.setHeight(contentHeight > 0 ? contentHeight : DEFAULT_FLOATING_HEIGHT);
+    floatingStage.setWidth(DEFAULT_FLOATING_WIDTH);
+    floatingStage.setHeight(DEFAULT_FLOATING_HEIGHT);
   }
 
   private void initializeScene() {
