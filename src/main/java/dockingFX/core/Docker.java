@@ -74,6 +74,7 @@ public class Docker {
     floatingStage.initStyle(StageStyle.UTILITY);
     TabPane floatingTabPane = createTabPane(title, content);
     DWindow dWindow = new DWindow(floatingStage, floatingTabPane, this);
+    dWindow.floatingStage.getScene().getStylesheets().setAll(mainStage.getScene().getStylesheets());
     floatingWindows.add(dWindow);
 
     // Initial dock check
