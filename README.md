@@ -34,9 +34,15 @@ You can create dockable windows by calling the `createDWindow` method on the `Do
 ```java
 Docker docker = new Docker(primaryStage);
 
-DWindow dockingWindow1 = docker.createDWindow(new SimpleStringProperty("Example Window 1"), null, Docker.DockPosition.LEFT);
-DWindow dockingWindow2 = docker.createDWindow(new SimpleStringProperty("Example Window 2"), null, Docker.DockPosition.TOP);
-// More windows...
+DWindow docker.createDWindow(
+  ExampleStringProperty("Example Window"),  // -> This is the string that will show on the window tab
+  ExampleNodeContent,                       // -> This is the main content node for your tab
+  Docker.DockPosition.None                  // -> This is the enum that shows the original dock position to the docker.
+                                            //    There are in total 5 choices:
+                                            //     - Left, Right, Top, Bottom: Initially dock to the corresponding
+                                            //                                 position of the main window.
+                                            //     - None: Will NOT dock in the initial state.
+);
 ```
 
 ### Window Configuration
@@ -45,8 +51,8 @@ You can configure the behavior of a window when it is closed by setting the `doc
 
 ```java
 
-dockingWindow1.setDockOnClose(true);  // Automatically docks when closed
-dockingWindow2.setDockOnClose(false); // Does not dock when closed
+dockingWindow1.setDockOnClose(true);        // Automatically docks when closed
+dockingWindow2.setDockOnClose(false);       // Does not dock when closed
 dockingWindow2.setOnClose(event -> {
   System.out.println("Window 2 closed.");
 });
@@ -58,15 +64,15 @@ dockingWindow2.setOnClose(event -> {
 You can switch between light and dark themes by adding the appropriate CSS file:
 
 ```java
-docker.addStyleSheet(DOCKER_STYLE_LIGHT_CSS); // Light theme
+docker.addStyleSheet(DOCKER_STYLE_LIGHT_CSS);   // Light theme
 ```
 
 ```java
-docker.addStyleSheet(DOCKER_STYLE_DARK_CSS); // Dark theme
+docker.addStyleSheet(DOCKER_STYLE_DARK_CSS);    // Dark theme
 ```
 
 ```java
-docker.addStyleSheet(YOUR_CUSTOM_STYLE_CSS); // Your custom theme
+docker.addStyleSheet(YOUR_CUSTOM_STYLE_CSS);    // Your custom theme
 ```
 
 ## Dependencies
